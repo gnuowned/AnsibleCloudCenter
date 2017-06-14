@@ -1,0 +1,28 @@
+# configuration to listen on 443 with SSL certs and loadbalance
+frontend https-in
+    mode http
+    log global
+    bind *:443 ssl crt /etc/haproxy/mgmtserver.pem ca-file /etc/haproxy/ca.pem
+    default_backend ccms
+
+# configuration to listen on 8443 with SSL certs and loadbalance
+frontend httpsalt-in
+    mode tcp
+    bind *:8443
+    default_backend nodes
+
+backend ccms
+    balance roundrobin
+    mode    http
+    log global
+    option httplog
+    cookie SVR insert preserve nocache
+    server  ccm1 {{prim_ip}}:443 check cookie ccm1 ssl verify none
+    server  ccm2 {{sec_ip}}:443 check cookie ccm2 ssl verify none
+
+backend nodes
+    mode tcp
+    balance roundrobin
+    option ssl-hello-chk
+    server  ccm1 {{prim_ip}}:8443 check
+    server  ccm2 {{sec_ip}}:8443 check

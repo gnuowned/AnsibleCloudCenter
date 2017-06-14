@@ -1,0 +1,5 @@
+CCM1 ansible_ssh_host=192.168.1.174
+CCM2 ansible_ssh_host=192.168.1.137
+CCMDB1 ansible_ssh_host=192.168.1.165
+CCMDB2 ansible_ssh_host=192.168.1.173
+CCMLB ansible_ssh_host=192.168.1.121

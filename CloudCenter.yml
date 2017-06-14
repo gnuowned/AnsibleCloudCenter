@@ -1,0 +1,153 @@
+---
+- name: Copy CloudCenter common installer files
+  hosts: all
+  sudo: True
+  tasks:
+    - name: Copy core installer
+      copy:
+        src: software/core_installer.bin
+        dest: /tmp/
+        mode: 0755
+
+- name: Copy CCM files to CCM and CCMDB
+  hosts: CCM1,CCM2,CCMDB1,CCMDB2
+  sudo: True
+  tasks:
+    - name: Copy CCM installer
+      copy:
+        src: software/ccm-installer.jar
+        dest: /tmp/
+    - name: Copy CCM XML response file
+      copy:
+        src: software/ccm-response.xml
+        dest: /tmp/
+
+- name: Intalling Database in HA
+  hosts: CCMDB1,CCMDB2
+  sudo: True
+  tasks:
+    - name: Execute core install
+      command: /tmp/core_installer.bin centos7 vmware mgmtpostgres
+      args:
+        chdir: /tmp
+    - name: Copying Private Keys
+      copy:
+        src: ssh_keys/id_rsa
+        dest: /root/.ssh/
+        mode: 0600
+    - name: Adding Public Keys
+      authorized_key:
+        user: root
+        state: present
+        key: "{{ lookup('file', 'ssh_keys/id_rsa.pub') }}"
+
+- name: Configuring replication Database in HA
+  hosts: CCMDB1
+  sudo: True
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Copy Modified wizard script
+      copy:
+        src: files/db_config_wizard_mod.sh
+        dest: /usr/local/cliqr/bin/
+        mode: 0755
+    - name: Copy parameters file
+      template:
+        src: files/pg_ha_info.j2
+        dest: /usr/local/osmosix/etc/pg_ha_info
+    - name: Running HA configuration
+      command: /usr/local/cliqr/bin/db_config_wizard_mod.sh
+
+- name: Add response files to CCM Primary
+  hosts: CCM1
+  sudo: True
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Copy parameters file
+      template:
+        src: files/ccm-response_CCMPrim.xml.j2
+        dest: /tmp/ccm-response.xml
+
+- name: Add reponse files to CCM Primary
+  hosts: CCM2
+  sudo: True
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Copy parameters file
+      template:
+        src: files/ccm-response_CCMSec.xml.j2
+        dest: /tmp/ccm-response.xml
+
+- name: Intall CCM
+  hosts: CCM1,CCM2
+  sudo: True
+  tasks:
+    - name: Execute core install
+      command: /tmp/core_installer.bin centos7 vmware ccm_sa
+      args:
+        chdir: /tmp
+    - name: Copying Private Keys
+      copy:
+        src: ssh_keys/id_rsa
+        dest: /home/cliqruser/.ssh/
+        mode: 0600
+        owner: cliqruser
+    - name: Adding Public Keys
+      authorized_key:
+        user: cliqruser
+        state: present
+        key: "{{ lookup('file', 'ssh_keys/id_rsa.pub') }}"
+    - name: Execute CCM installer
+      command: /usr/lib/jvm/jdk1.8.0_102/bin/java -jar ccm-installer.jar ccm-response.xml
+      args:
+        chdir: /tmp
+
+- name: configure CCM HA
+  hosts: CCM1
+  sudo: True
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Copy Modified Script
+      template:
+        src: files/ccm_config_wizard.sh.j2
+        dest: /usr/local/cliqr/bin/ccm_config_wizard2.sh
+        mode: 0755
+    - name: Executing HA Script
+      command: /usr/local/cliqr/bin/ccm_config_wizard2.sh
+
+- name: configure CCM HA
+  hosts: CCM2
+  sudo: True
+  tasks:
+    - name: Restarting tomcat service
+      command: /etc/init.d/tomcat restart
+
+- name: configure CCM LoadBalancer
+  hosts: CCMLB
+  sudo: True
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Install haproxy
+      yum:
+        name: haproxy
+    - name: copy certificate mgmtserver.pem
+      copy:
+        src: files/mgmtserver.pem
+        dest: /etc/haproxy/
+    - name: Apply certificate ca.pem
+      copy:
+        src: files/ca.pem
+        dest: /etc/haproxy
+    - name: Apply Configuration
+      template:
+        src: files/haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+    - name: Restarting haproxy service
+      service:
+        name: haproxy
+        state: restarted

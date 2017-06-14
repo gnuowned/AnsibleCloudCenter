@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<AutomatedInstallation langpack="eng">
+<com.izforge.izpack.panels.htmlinfo.HTMLInfoPanel id="welcome"/>
+<com.izforge.izpack.panels.target.TargetPanel id="install_dir">
+<installpath>/usr/local/osmosix</installpath>
+</com.izforge.izpack.panels.target.TargetPanel>
+<com.izforge.izpack.panels.userinput.UserInputPanel id="install_options">
+<userInput>
+<entry key="ccm_enable" value="true"/>
+<entry key="db_enable" value="true"/>
+<entry key="esb_enable" value="false"/>
+<entry key="ccm_dnsname" value="default"/>
+<entry key="db_host" value="{{ha_vip}}"/>
+<entry key="db_user" value="default"/>
+<entry key="db_pass" value="default"/>
+</userInput>
+</com.izforge.izpack.panels.userinput.UserInputPanel>
+<com.izforge.izpack.panels.packs.PacksPanel id="sdk_pack_select">
+<pack index="0" name="SSL" selected="true"/>
+<pack index="1" name="Core" selected="true"/>
+<pack index="2" name="post" selected="true"/>
+</com.izforge.izpack.panels.packs.PacksPanel>
+<com.izforge.izpack.panels.install.InstallPanel id="install"/>
+<com.izforge.izpack.panels.finish.FinishPanel id="finish"/>
+<com.izforge.izpack.panels.htmlinfo.HTMLInfoPanel id="welcome"/>
+<com.izforge.izpack.panels.target.TargetPanel id="install_dir"/>
+<com.izforge.izpack.panels.packs.PacksPanel id="sdk_pack_select"/>
+<com.izforge.izpack.panels.install.InstallPanel id="install"/>
+<com.izforge.izpack.panels.finish.FinishPanel id="finish"/>
+</AutomatedInstallation>

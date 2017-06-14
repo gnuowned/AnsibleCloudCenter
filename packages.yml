@@ -1,0 +1,11 @@
+---
+- name: Install Packages to all
+  hosts: all
+  sudo: True
+  tasks:
+    - name: upgrade distribution
+      yum:
+        name: '*'
+    - name: install vim
+      yum:
+        name: vim

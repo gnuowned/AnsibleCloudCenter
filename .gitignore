@@ -1,0 +1,4 @@
+#ignoring ./software
+software/
+*tar
+*tar.gz
